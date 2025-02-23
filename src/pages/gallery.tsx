@@ -1,7 +1,35 @@
-import Link from 'next/link';
-{/*import Image from 'next/image'; // We'll need this later for real images*/}
+// src/pages/gallery.tsx
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+
+// Type for our image data
+interface CloudinaryImage {
+  public_id: string;
+  secure_url: string;
+  format: string;
+  width: number;
+  height: number;
+}
 
 export default function Gallery() {
+  const [images, setImages] = useState<CloudinaryImage[]>([]);
+
+  // Fetch images when component mounts
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const response = await fetch("/api/images");
+        const data = await response.json();
+        setImages(data.resources || []);
+      } catch (error) {
+        console.error("Error fetching images:", error);
+      }
+    };
+
+    fetchImages();
+  }, []);
+
   return (
     <div className="space-y-8">
       {/* Category Filters */}
@@ -19,16 +47,19 @@ export default function Gallery() {
 
       {/* Image Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {[...Array(12)].map((_, index) => (
-          <Link 
-            href={`/images/${index + 1}`} 
-            key={index}
-            className="aspect-square bg-white rounded-lg overflow-hidden hover:opacity-90 transition-opacity relative" // added relative for Image component
+        {images.map((image) => (
+          <Link
+            href={`/images/${image.public_id}`}
+            key={image.public_id}
+            className="aspect-square bg-white rounded-lg overflow-hidden hover:opacity-90 transition-opacity relative"
           >
-            {/* This structure will work with both placeholders and real images later */}
-            <div className="w-full h-full flex items-center justify-center text-gray-500">
-              Bild {index + 1}
-            </div>
+            <Image
+              src={image.secure_url}
+              alt=""
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+            />
           </Link>
         ))}
       </div>

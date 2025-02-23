@@ -1,26 +1,62 @@
+// src/pages/images/[id].tsx
 import { useRouter } from 'next/router';
+import Image from 'next/image';
+import { useState, useEffect } from 'react';
 
-export default function Photo() {
+interface CloudinaryImage {
+  public_id: string;
+  secure_url: string;
+  format: string;
+  width: number;
+  height: number;
+}
+
+export default function ImagePage() {
   const router = useRouter();
   const { id } = router.query;
+  const [image, setImage] = useState<CloudinaryImage | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchImage = async () => {
+      try {
+        const response = await fetch(`/api/image?id=${id}`);
+        const data = await response.json();
+        setImage(data);
+      } catch (error) {
+        console.error('Error fetching image:', error);
+      }
+    };
+
+    fetchImage();
+  }, [id]);
+
+  if (!image) return <div>Loading...</div>;
 
   return (
-    <div className="max-w-5xl mx-auto">
-      {/* Image container */}
-      <div className="bg-white rounded-lg p-4 mb-4">
-        <div className="aspect-[3/2] bg-gray-100 rounded flex items-center justify-center">
-          Stor version av bild {id}
+    <div className="max-w-7xl mx-auto p-8">
+      <div className="bg-white rounded-lg overflow-hidden shadow-lg">
+        {/* Image container that adapts to image dimensions */}
+        <div className="relative w-full" style={{ 
+          paddingTop: `${(image.height / image.width) * 100}%`
+        }}>
+          <Image
+            src={image.secure_url}
+            alt=""
+            fill
+            className="object-contain"
+            sizes="(max-width: 1280px) 100vw, 1280px"
+            priority
+          />
         </div>
-      </div>
-
-      {/* Image details */}
-      <div className="bg-white rounded-lg p-4">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">
-          Bild {id}
-        </h1>
-        <p className="text-gray-700">
-          Beskrivning av bilden kommer här
-        </p>
+        
+        {/* Image details */}
+        <div className="p-6">
+          <h1 className="text-2xl font-bold text-gray-800">
+            {image.public_id.split('/').pop()?.replace(/_/g, ' ')}
+          </h1>
+        </div>
       </div>
     </div>
   );
