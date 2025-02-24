@@ -13,8 +13,11 @@ export default async function handler(
   }
 
   try {
-    // Get specific image details from Cloudinary
-    const result = await cloudinary.api.resource(id);
+    const result = await cloudinary.api.resource(id, {
+      resource_type: 'image',
+      prefix: 'portfolio',
+      tags: true  // Lägg till denna rad för att få med tags
+    });
     res.status(200).json(result);
   } catch (error) {
     res.status(500).json({

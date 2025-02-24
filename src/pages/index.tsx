@@ -2,18 +2,17 @@
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 
-// Arrays med bilder för varje position
 const imageGroups = {
   position1: [
-    'https://res.cloudinary.com/dbse0vgyf/image/upload/v1740352102/torsten_lj2ai9.jpg',
+    'https://res.cloudinary.com/dbse0vgyf/image/upload/v1740433997/yvonneEskilstuna09_36_jevu7a.jpg',
     // Lägg till fler URLs här för position 1
   ],
   position2: [
-    'https://res.cloudinary.com/dbse0vgyf/image/upload/v1740352102/torsten_lj2ai9.jpg',
+    'https://res.cloudinary.com/dbse0vgyf/image/upload/w_1000,ar_1:1,c_fill,g_auto,e_art:hokusai/v1740434005/yvonneEskilstuna09_37_xxf8da.jpg',
     // Lägg till fler URLs här för position 2
   ],
   position3: [
-    'https://res.cloudinary.com/dbse0vgyf/image/upload/v1740352102/torsten_lj2ai9.jpg',
+    'https://res.cloudinary.com/dbse0vgyf/image/upload/w_200,h_200,c_limit,e_blur:400,o_90,b_black/l_text:arial_80:®,ar_1:1,c_lfill,o_60,co_rgb:ffffff,b_rgb:000000,r_max/v1740434005/yvonneEskilstuna09_37_xxf8da.jpg',
     // Lägg till fler URLs här för position 3
   ]
 };
