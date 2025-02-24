@@ -1,75 +1,105 @@
 // src/pages/index.tsx
-import Image from 'next/image';
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
-const imageGroups = {
-  position1: [
-    'https://res.cloudinary.com/dbse0vgyf/image/upload/v1740433997/yvonneEskilstuna09_36_jevu7a.jpg',
-    // Lägg till fler URLs här för position 1
-  ],
-  position2: [
-    'https://res.cloudinary.com/dbse0vgyf/image/upload/w_1000,ar_1:1,c_fill,g_auto,e_art:hokusai/v1740434005/yvonneEskilstuna09_37_xxf8da.jpg',
-    // Lägg till fler URLs här för position 2
-  ],
-  position3: [
-    'https://res.cloudinary.com/dbse0vgyf/image/upload/w_200,h_200,c_limit,e_blur:400,o_90,b_black/l_text:arial_80:®,ar_1:1,c_lfill,o_60,co_rgb:ffffff,b_rgb:000000,r_max/v1740434005/yvonneEskilstuna09_37_xxf8da.jpg',
-    // Lägg till fler URLs här för position 3
-  ]
-};
+interface CloudinaryImage {
+  public_id: string;
+  secure_url: string;
+}
+
+interface CategoryImages {
+  concert: CloudinaryImage[];
+  landscape: CloudinaryImage[];
+  street: CloudinaryImage[];
+}
 
 export default function Home() {
-  const [currentIndices, setCurrentIndices] = useState({ position1: 0, position2: 0, position3: 0 });
+  const [images, setImages] = useState<CategoryImages>({ concert: [], landscape: [], street: [] });
+  const [currentImages, setCurrentImages] = useState<CloudinaryImage[]>([]);
   const [fading, setFading] = useState(false);
 
+  // Hämta alla bilder när komponenten laddas
   useEffect(() => {
-    const interval = setInterval(() => {
-      setFading(true);
-      setTimeout(() => {
-        setCurrentIndices(prev => ({
-          position1: (prev.position1 + 1) % imageGroups.position1.length,
-          position2: (prev.position2 + 1) % imageGroups.position2.length,
-          position3: (prev.position3 + 1) % imageGroups.position3.length,
-        }));
-        setFading(false);
-      }, 1000);
-    }, 15000);
+    const fetchCategoryImages = async (category: string) => {
+      try {
+        const response = await fetch(`/api/images?category=portfolio/${category}`);
+        const data = await response.json();
+        return data.resources || [];
+      } catch (error) {
+        console.error(`Error fetching ${category} images:`, error);
+        return [];
+      }
+    };
 
-    return () => clearInterval(interval);
+    const fetchAllImages = async () => {
+      const [concertImages, landscapeImages, streetImages] = await Promise.all([
+        fetchCategoryImages('concert'),
+        fetchCategoryImages('landscape'),
+        fetchCategoryImages('street'),
+      ]);
+
+      setImages({
+        concert: concertImages,
+        landscape: landscapeImages,
+        street: streetImages,
+      });
+
+      // Sätt initiala bilder
+      setCurrentImages([
+        getRandomImage(concertImages),
+        getRandomImage(landscapeImages),
+        getRandomImage(streetImages),
+      ]);
+    };
+
+    fetchAllImages();
   }, []);
 
-  const featuredImages = [
-    {
-      id: 1,
-      url: imageGroups.position1[currentIndices.position1],
-    },
-    {
-      id: 2,
-      url: imageGroups.position2[currentIndices.position2],
-    },
-    {
-      id: 3,
-      url: imageGroups.position3[currentIndices.position3],
+  // Funktion för att hämta en slumpmässig bild från en array
+  const getRandomImage = (images: CloudinaryImage[]): CloudinaryImage => {
+    return images[Math.floor(Math.random() * images.length)];
+  };
+
+  // Rotera bilder med fade-effekt
+  useEffect(() => {
+    if (Object.values(images).every(arr => arr.length > 0)) {
+      const interval = setInterval(() => {
+        setFading(true);
+        
+        setTimeout(() => {
+          setCurrentImages([
+            getRandomImage(images.concert),
+            getRandomImage(images.landscape),
+            getRandomImage(images.street),
+          ]);
+          setFading(false);
+        }, 1000);
+      }, 7000);
+
+      return () => clearInterval(interval);
     }
-  ];
+  }, [images]);
 
   return (
     <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {featuredImages.map((image) => (
+      {currentImages.map((image, index) => (
         <div 
-          key={image.id}
+          key={image?.public_id || index}
           className="aspect-square relative bg-white rounded-lg overflow-hidden"
         >
-          <Image
-            src={image.url}
-            alt=""
-            fill
-            className={`
-              object-cover
-              transition-opacity duration-1000 ease-in-out
-              ${fading ? 'opacity-0' : 'opacity-100'}
-            `}
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
+          {image && (
+            <Image
+              src={image.secure_url}
+              alt=""
+              fill
+              className={`
+                object-cover
+                transition-opacity duration-1000 ease-in-out
+                ${fading ? 'opacity-0' : 'opacity-100'}
+              `}
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+          )}
         </div>
       ))}
     </section>
