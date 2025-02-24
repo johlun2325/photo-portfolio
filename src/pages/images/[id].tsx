@@ -1,4 +1,3 @@
-// src/pages/images/[id].tsx
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
@@ -11,7 +10,7 @@ interface CloudinaryImage {
   height: number;
   format: string;
   created_at: string;
-  tags: string[];  // Säkerställ att detta finns
+  tags: string[];
 }
 
 export default function ImagePage() {
@@ -60,7 +59,7 @@ export default function ImagePage() {
             href="/gallery" 
             className="text-gray-600 hover:text-gray-900 transition-colors"
           >
-            ← Tillbaka till galleriet
+            ← Back to gallery
           </Link>
         </div>
 
@@ -82,7 +81,7 @@ export default function ImagePage() {
             {formatImageTitle(image)}
           </h1>
           <p className="text-gray-600 mt-2">
-            Uppladdad: {new Date(image.created_at).toLocaleDateString('sv-SE', {
+            Uploaded: {new Date(image.created_at).toLocaleDateString('sv-SE', {
               year: 'numeric',
               month: 'long',
               day: 'numeric'

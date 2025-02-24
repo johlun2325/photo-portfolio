@@ -1,4 +1,3 @@
-// src/pages/api/images.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import cloudinary from '@/utils/cloudinary';
 
@@ -10,7 +9,7 @@ export default async function handler(
   const categoryString = Array.isArray(category) ? category[0] : category;
 
   try {
-    let expression = 'folder:portfolio/*'; // Default: alla bilder i portfolio
+    let expression = 'folder:portfolio/*';
 
     if (categoryString) {
       const fullPath = categoryString.startsWith('portfolio/') 

@@ -1,4 +1,3 @@
-// src/pages/api/image.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import cloudinary from '@/utils/cloudinary';
 
@@ -16,7 +15,7 @@ export default async function handler(
     const result = await cloudinary.api.resource(id, {
       resource_type: 'image',
       prefix: 'portfolio',
-      tags: true  // Lägg till denna rad för att få med tags
+      tags: true
     });
     res.status(200).json(result);
   } catch (error) {

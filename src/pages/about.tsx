@@ -1,4 +1,3 @@
-// src/pages/about.tsx
 export default function About() {
     return (
       <article className="max-w-2xl mx-auto">
@@ -16,3 +15,4 @@ export default function About() {
       </article>
     );
   }
+  

@@ -18,7 +18,6 @@ export default function Home() {
   const [currentImages, setCurrentImages] = useState<CloudinaryImage[]>([]);
   const [fading, setFading] = useState(false);
 
-  // Hämta alla bilder när komponenten laddas
   useEffect(() => {
     const fetchCategoryImages = async (category: string) => {
       try {
@@ -44,7 +43,6 @@ export default function Home() {
         street: streetImages,
       });
 
-      // Sätt initiala bilder
       setCurrentImages([
         getRandomImage(concertImages),
         getRandomImage(landscapeImages),
@@ -55,12 +53,10 @@ export default function Home() {
     fetchAllImages();
   }, []);
 
-  // Funktion för att hämta en slumpmässig bild från en array
   const getRandomImage = (images: CloudinaryImage[]): CloudinaryImage => {
     return images[Math.floor(Math.random() * images.length)];
   };
 
-  // Rotera bilder med fade-effekt
   useEffect(() => {
     if (Object.values(images).every(arr => arr.length > 0)) {
       const interval = setInterval(() => {

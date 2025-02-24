@@ -1,4 +1,3 @@
-// src/pages/gallery.tsx
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -37,7 +36,7 @@ export default function Gallery() {
   const fetchCategoryImages = async (category: string) => {
     setLoading(true);
     try {
-      console.log("Fetching images for category:", category); // Debug
+      console.log("Fetching images for category:", category);
       const response = await fetch(`/api/images?category=${category}`);
       const data = await response.json();
       setCategoryImages(data.resources || []);
@@ -55,7 +54,6 @@ export default function Gallery() {
 
   return (
     <div className="space-y-8 p-8">
-      {/* Kategori-knappar */}
       <div className="flex flex-col md:flex-row gap-4 w-full">
         {categories.map((category) => (
           <div
@@ -91,7 +89,6 @@ export default function Gallery() {
         ))}
       </div>
 
-      {/* Bildgrid för vald kategori */}
       {selectedCategory && (
         <div className="space-y-4">
           <h2 className="text-2xl font-semibold text-gray-800">
