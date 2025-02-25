@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: 'export',
@@ -7,8 +9,8 @@ const nextConfig: NextConfig = {
     domains: ['res.cloudinary.com'],
     unoptimized: true,
   },
-  basePath: '/johlun2325/photo-portfolio',
-  assetPrefix: '/johlun2325/photo-portfolio',
+  basePath: isProduction ? '/photo-portfolio' : '',
+  assetPrefix: isProduction ? '/photo-portfolio' : '',
 };
 
 export default nextConfig;

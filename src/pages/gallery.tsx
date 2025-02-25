@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { v2 as cloudinary } from "cloudinary";
 
 interface CloudinaryImage {
   public_id: string;
@@ -13,70 +14,76 @@ interface Category {
   coverImage: string;
 }
 
-export default function Gallery() {
-  const [categories, setCategories] = useState<Category[]>([]);
+interface GalleryProps {
+  categories: Category[];
+  initialImages: Record<string, CloudinaryImage[]>;
+}
+
+const getOptimizedImageUrl = (url: string, width: number) => {
+  return url.replace("/upload/", `/upload/w_${width},c_scale,q_auto,f_auto/`);
+};
+
+export async function getStaticProps() {
+  cloudinary.config({
+    cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+
+  try {
+    const foldersResult = await cloudinary.api.sub_folders("portfolio");
+
+    const categoriesWithImages = await Promise.all(
+      foldersResult.folders.map(async (folder: { name: string }) => {
+        const images = await cloudinary.search
+          .expression(`folder:portfolio/${folder.name}/*`)
+          .sort_by("created_at", "desc")
+          .max_results(1)
+          .execute();
+
+        return {
+          id: folder.name,
+          name: folder.name.charAt(0).toUpperCase() + folder.name.slice(1),
+          coverImage: images.resources[0]?.secure_url || "",
+        };
+      })
+    );
+
+    const initialImages: Record<string, CloudinaryImage[]> = {};
+    for (const category of categoriesWithImages) {
+      const images = await cloudinary.search
+        .expression(`folder:portfolio/${category.id}/*`)
+        .sort_by("created_at", "desc")
+        .max_results(100)
+        .execute();
+      initialImages[category.id] = images.resources;
+    }
+
+    return {
+      props: {
+        categories: categoriesWithImages,
+        initialImages,
+      },
+    };
+  } catch (error) {
+    console.error("Error in getStaticProps:", error);
+    return {
+      props: {
+        categories: [],
+        initialImages: {},
+      },
+    };
+  }
+}
+
+export default function Gallery({ categories, initialImages }: GalleryProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [categoryImages, setCategoryImages] = useState<CloudinaryImage[]>([]);
-  const [loading, setLoading] = useState(false);
 
-  const formatCategoryName = useCallback((folder: string) => {
-    return folder.charAt(0).toUpperCase() + folder.slice(1);
-  }, []);
-
-  const fetchLatestImage = useCallback(async (category: string) => {
-    try {
-      const response = await fetch(`/api/images?category=${category}&limit=1`);
-      const data = await response.json();
-      return data.resources[0];
-    } catch (error) {
-      console.error(`Error fetching cover image for ${category}:`, error);
-      return null;
-    }
-  }, []);
-
-  const fetchCategories = useCallback(async () => {
-    try {
-      const response = await fetch('/api/folders');
-      const data = await response.json();
-      
-      const categoriesWithCovers = await Promise.all(
-        data.folders.map(async (folder: string) => {
-          const coverImage = await fetchLatestImage(folder);
-          return {
-            id: folder,
-            name: formatCategoryName(folder),
-            coverImage: coverImage?.secure_url || ''
-          };
-        })
-      );
-
-      setCategories(categoriesWithCovers);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  }, [fetchLatestImage, formatCategoryName]);
-
-  const fetchCategoryImages = useCallback(async (category: string) => {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/images?category=${category}`);
-      const data = await response.json();
-      setCategoryImages(data.resources || []);
-    } catch (error) {
-      console.error("Error fetching category images:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const handleCategoryClick = useCallback((categoryId: string) => {
+  const handleCategoryClick = (categoryId: string) => {
     setSelectedCategory(categoryId);
-    fetchCategoryImages(categoryId);
-  }, [fetchCategoryImages]);
-
-  useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+    setCategoryImages(initialImages[categoryId] || []);
+  };
 
   return (
     <div className="space-y-8 p-8">
@@ -89,10 +96,11 @@ export default function Gallery() {
           >
             <div className="aspect-[3/2] relative overflow-hidden rounded-lg">
               <Image
-                src={category.coverImage}
+                src={getOptimizedImageUrl(category.coverImage, 400)}
                 alt={category.name}
                 fill
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
+                priority
               />
               <div
                 className={`
@@ -121,28 +129,25 @@ export default function Gallery() {
             {categories.find((c) => c.id === selectedCategory)?.name}
           </h2>
 
-          {loading ? (
-            <div className="text-center py-8">Load images...</div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {categoryImages.map((image) => (
-                <Link
-                  href={`/images/${encodeURIComponent(image.public_id)}`}
-                  key={image.public_id}
-                >
-                  <div className="aspect-square relative bg-white rounded-lg overflow-hidden">
-                    <Image
-                      src={image.secure_url}
-                      alt=""
-                      fill
-                      className="object-cover hover:scale-105 transition-transform duration-300"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                    />
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {categoryImages.map((image, index) => (
+              <Link
+                href={`/images/${encodeURIComponent(image.public_id)}`}
+                key={image.public_id}
+              >
+                <div className="aspect-square relative bg-white rounded-lg overflow-hidden">
+                  <Image
+                    src={getOptimizedImageUrl(image.secure_url, 600)}
+                    alt=""
+                    fill
+                    className="object-cover hover:scale-105 transition-transform duration-300"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                    priority={index < 4}
+                  />
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
     </div>

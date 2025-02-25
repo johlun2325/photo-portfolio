@@ -1,6 +1,6 @@
-// src/pages/index.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
+import { v2 as cloudinary } from 'cloudinary';
 
 interface CloudinaryImage {
   public_id: string;
@@ -13,79 +13,103 @@ interface CategoryImages {
   street: CloudinaryImage[];
 }
 
-export default function Home() {
-  const [images, setImages] = useState<CategoryImages>({ concert: [], landscape: [], street: [] });
+interface HomeProps {
+  initialImages: CategoryImages;
+}
+
+const getOptimizedImageUrl = (url: string, width: number) => {
+  return url.replace('/upload/', `/upload/w_${width},c_scale,q_auto,f_auto/`);
+};
+
+export async function getStaticProps() {
+  cloudinary.config({
+    cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+
+  try {
+    const categories = ['concert', 'landscape', 'street'];
+    const categoryImages: CategoryImages = {
+      concert: [],
+      landscape: [],
+      street: []
+    };
+
+    for (const category of categories) {
+      const results = await cloudinary.search
+        .expression(`folder:portfolio/${category}/*`)
+        .sort_by('created_at', 'desc')
+        .max_results(10)
+        .execute();
+      categoryImages[category as keyof CategoryImages] = results.resources;
+    }
+
+    return {
+      props: {
+        initialImages: categoryImages
+      }
+    };
+  } catch (error) {
+    console.error('Error fetching images:', error);
+    return {
+      props: {
+        initialImages: { concert: [], landscape: [], street: [] }
+      }
+    };
+  }
+}
+
+export default function Home({ initialImages }: HomeProps) {
   const [currentImages, setCurrentImages] = useState<CloudinaryImage[]>([]);
   const [fading, setFading] = useState(false);
 
-  useEffect(() => {
-    const fetchCategoryImages = async (category: string) => {
-      try {
-        const response = await fetch(`/api/images?category=portfolio/${category}`);
-        const data = await response.json();
-        return data.resources || [];
-      } catch (error) {
-        console.error(`Error fetching ${category} images:`, error);
-        return [];
-      }
-    };
-
-    const fetchAllImages = async () => {
-      const [concertImages, landscapeImages, streetImages] = await Promise.all([
-        fetchCategoryImages('concert'),
-        fetchCategoryImages('landscape'),
-        fetchCategoryImages('street'),
-      ]);
-
-      setImages({
-        concert: concertImages,
-        landscape: landscapeImages,
-        street: streetImages,
-      });
-
-      setCurrentImages([
-        getRandomImage(concertImages),
-        getRandomImage(landscapeImages),
-        getRandomImage(streetImages),
-      ]);
-    };
-
-    fetchAllImages();
+  const getRandomImage = useCallback((images: CloudinaryImage[]): CloudinaryImage => {
+    if (!images.length) return { public_id: '', secure_url: '' };
+    return images[Math.floor(Math.random() * images.length)];
   }, []);
 
-  const getRandomImage = (images: CloudinaryImage[]): CloudinaryImage => {
-    return images[Math.floor(Math.random() * images.length)];
-  };
+  const updateImages = useCallback(() => {
+    const newImages = [
+      getRandomImage(initialImages.concert),
+      getRandomImage(initialImages.landscape),
+      getRandomImage(initialImages.street),
+    ].filter(img => img.secure_url);
+
+    if (newImages.length === 3) {
+      setCurrentImages(newImages);
+    }
+  }, [initialImages, getRandomImage]);
 
   useEffect(() => {
-    if (Object.values(images).every(arr => arr.length > 0)) {
-      const interval = setInterval(() => {
-        setFading(true);
-        
-        setTimeout(() => {
-          setCurrentImages([
-            getRandomImage(images.concert),
-            getRandomImage(images.landscape),
-            getRandomImage(images.street),
-          ]);
-          setFading(false);
-        }, 1000);
-      }, 7000);
+    updateImages();
+    
+    const interval = setInterval(() => {
+      setFading(true);
+      
+      setTimeout(() => {
+        updateImages();
+        setFading(false);
+      }, 1000);
+    }, 7000);
 
-      return () => clearInterval(interval);
-    }
-  }, [images]);
+    return () => clearInterval(interval);
+  }, [updateImages]);
+
+  if (!currentImages.length) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {currentImages.map((image, index) => (
         <div 
-          key={image?.public_id || index}
+          key={image.public_id || index}
           className="aspect-square relative bg-white rounded-lg overflow-hidden"
         >
-          {image && (
+          {image.secure_url && (
             <Image
-              src={image.secure_url}
+              src={getOptimizedImageUrl(image.secure_url, 800)}
               alt=""
               fill
               className={`
@@ -94,6 +118,7 @@ export default function Home() {
                 ${fading ? 'opacity-0' : 'opacity-100'}
               `}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              priority={true}
             />
           )}
         </div>
