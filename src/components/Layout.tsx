@@ -7,7 +7,7 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   return (
     <main className="min-h-screen bg-gray-200">
-      <header className="p-8 mb-12">
+      <header className="p-8 mb-6">
         <h1 className="text-4xl font-bold text-gray-800">
           Johanna Lundström
         </h1>
@@ -41,7 +41,7 @@ export default function Layout({ children }: LayoutProps) {
         </nav>
       </header>
 
-      <div className="p-8">
+      <div className="p-2">
         {children}
       </div>
     </main>

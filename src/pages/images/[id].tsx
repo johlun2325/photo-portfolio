@@ -52,10 +52,10 @@ export default function ImagePage() {
   if (!image) return <div className="text-center py-8">Image not found</div>;
 
   return (
-    <div className="max-w-7xl mx-auto p-8">
+    <div className="max-w-2xl mx-auto p-8">
       <div className="bg-white rounded-lg overflow-hidden shadow-lg">
-        <div className="p-4">
-          <Link 
+      <div className="py-2 px-4">
+      <Link 
             href="/gallery" 
             className="text-gray-600 hover:text-gray-900 transition-colors"
           >

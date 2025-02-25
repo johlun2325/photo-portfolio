@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -7,36 +7,62 @@ interface CloudinaryImage {
   secure_url: string;
 }
 
-const categories = [
-  {
-    id: "concert",
-    name: "Concert",
-    coverImage:
-      "https://res.cloudinary.com/dbse0vgyf/image/upload/v1740433986/yvonneEskilstuna09_27_zo7rcw.jpg",
-  },
-  {
-    id: "landscape",
-    name: "Landscape",
-    coverImage:
-      "https://res.cloudinary.com/dbse0vgyf/image/upload/v1740398061/IMG_2139_u6ztz6.jpg",
-  },
-  {
-    id: "street",
-    name: "Street",
-    coverImage:
-      "https://res.cloudinary.com/dbse0vgyf/image/upload/v1740398143/DSCF3782_n3jnmc.jpg",
-  },
-];
+interface Category {
+  id: string;
+  name: string;
+  coverImage: string;
+}
 
 export default function Gallery() {
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [categoryImages, setCategoryImages] = useState<CloudinaryImage[]>([]);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch("/api/folders");
+      const data = await response.json();
+
+      const categoriesWithCovers = await Promise.all(
+        data.folders.map(async (folder: string) => {
+          const coverImage = await fetchLatestImage(folder);
+          return {
+            id: folder,
+            name: formatCategoryName(folder),
+            coverImage: coverImage?.secure_url || "",
+          };
+        })
+      );
+
+      setCategories(categoriesWithCovers);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
+
+  const formatCategoryName = (folder: string) => {
+    return folder.charAt(0).toUpperCase() + folder.slice(1);
+  };
+
+  const fetchLatestImage = async (category: string) => {
+    try {
+      const response = await fetch(`/api/images?category=${category}&limit=1`);
+      const data = await response.json();
+      return data.resources[0];
+    } catch (error) {
+      console.error(`Error fetching cover image for ${category}:`, error);
+      return null;
+    }
+  };
+
   const fetchCategoryImages = async (category: string) => {
     setLoading(true);
     try {
-      console.log("Fetching images for category:", category);
       const response = await fetch(`/api/images?category=${category}`);
       const data = await response.json();
       setCategoryImages(data.resources || []);
@@ -54,14 +80,14 @@ export default function Gallery() {
 
   return (
     <div className="space-y-8 p-8">
-      <div className="flex flex-col md:flex-row gap-4 w-full">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 w-full">
         {categories.map((category) => (
           <div
             key={category.id}
-            className="flex-1 relative group cursor-pointer"
+            className="relative group cursor-pointer" // Removed flex-1
             onClick={() => handleCategoryClick(category.id)}
           >
-            <div className="aspect-[16/9] relative overflow-hidden rounded-lg">
+            <div className="aspect-[3/2] relative overflow-hidden rounded-lg">
               <Image
                 src={category.coverImage}
                 alt={category.name}
@@ -80,7 +106,7 @@ export default function Gallery() {
                 }
               `}
               >
-                <h2 className="text-white text-2xl font-semibold">
+                <h2 className="text-white text-lg font-semibold">
                   {category.name}
                 </h2>
               </div>
