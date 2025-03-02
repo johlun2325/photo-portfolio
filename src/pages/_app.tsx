@@ -1,12 +1,12 @@
 import { Montserrat } from 'next/font/google';
 import type { AppProps } from 'next/app';
-import Layout from '@/components/Layout';
+import Layout from '../components/layout/Layout';
 import '@/styles/globals.css';
 
 const montserrat = Montserrat({ 
   subsets: ['latin'],
-  weight: ['400', '500', '700'],  // Välj vilka weights du vill använda
-  fallback: ['Georgia', 'serif'],  // Fallback fonts
+  weight: ['400', '500', '700'],
+  fallback: ['Georgia', 'serif'],
 });
 
 export default function App({ Component, pageProps }: AppProps) {
