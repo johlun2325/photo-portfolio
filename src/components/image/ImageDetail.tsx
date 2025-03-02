@@ -46,7 +46,7 @@ export const ImageDetail = ({ image }: ImageDetailProps) => {
             {title}
           </h1>
           <p className="text-gray-600 mt-2">
-            Uppladdad: {formatImageDate(image.created_at)}
+            Uploaded: {formatImageDate(image.created_at)}
           </p>
         </div>
       </div>

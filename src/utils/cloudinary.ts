@@ -3,7 +3,8 @@ import {
   CategoryImages, 
   CloudinaryResource, 
   CloudinaryImageDetail, 
-  CloudinaryImage 
+  CloudinaryImage,
+  Category 
 } from '@/types';
 
 cloudinary.config({
@@ -42,7 +43,6 @@ export async function getImageDetail(imageId: string): Promise<CloudinaryImageDe
       last_updated: null,
     };
 
-    // Ta bort undefined-värden
     Object.keys(serializedResult).forEach(key => {
       if (serializedResult[key] === undefined) {
         delete serializedResult[key];
@@ -56,9 +56,6 @@ export async function getImageDetail(imageId: string): Promise<CloudinaryImageDe
   }
 }
 
-/**
- * Hämtar bilder för alla angivna kategorier
- */
 export async function getCategoryImages(categories: string[]): Promise<CategoryImages> {
   try {
     const categoryImages = {} as CategoryImages;
@@ -77,10 +74,92 @@ export async function getCategoryImages(categories: string[]): Promise<CategoryI
   } catch (error) {
     console.error('Error fetching images:', error);
     
-    // Skapa ett tomt objekt med alla kategorier
+
     return categories.reduce((acc, category) => {
       acc[category] = [];
       return acc;
     }, {} as CategoryImages);
+  }
+}
+
+/**
+ * Hämtar alla kategorier med omslagsbilder
+ */
+export async function getGalleryCategories(): Promise<Category[]> {
+  try {
+    const foldersResult = await cloudinary.api.sub_folders("portfolio");
+
+    return Promise.all(
+      foldersResult.folders.map(async (folder: { name: string }) => {
+        const images = await cloudinary.search
+          .expression(`folder:portfolio/${folder.name}/*`)
+          .sort_by("created_at", "desc")
+          .max_results(1)
+          .execute();
+
+        return {
+          id: folder.name,
+          name: folder.name.charAt(0).toUpperCase() + folder.name.slice(1),
+          coverImage: images.resources[0]?.secure_url || "",
+        };
+      })
+    );
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    return [];
+  }
+}
+
+/**
+ * Hämtar alla bilder för alla kategorier
+ */
+export async function getAllCategoryImages(categories: Category[]): Promise<Record<string, CloudinaryImage[]>> {
+  try {
+    const initialImages: Record<string, CloudinaryImage[]> = {};
+    
+    for (const category of categories) {
+      const images = await cloudinary.search
+        .expression(`folder:portfolio/${category.id}/*`)
+        .sort_by("created_at", "desc")
+        .max_results(100)
+        .execute();
+        
+      initialImages[category.id] = images.resources as CloudinaryImage[];
+    }
+    
+    return initialImages;
+  } catch (error) {
+    console.error("Error fetching category images:", error);
+    return {};
+  }
+}
+
+// Lägg till i src/utils/cloudinary.ts
+
+/**
+ * Hämtar alla kategorier med omslagsbilder
+ */
+export async function getCategories(): Promise<Category[]> {
+  try {
+    const foldersResult = await cloudinary.api.sub_folders("portfolio");
+
+    return await Promise.all(
+      foldersResult.folders.map(async (folder: { name: string }) => {
+        const images = await cloudinary.search
+          .expression(`folder:portfolio/${folder.name}/*`)
+          .sort_by("created_at", "desc")
+          .max_results(1)
+          .execute();
+
+        return {
+          id: folder.name,
+          name: folder.name.charAt(0).toUpperCase() + folder.name.slice(1),
+          coverImage: images.resources[0]?.secure_url || "",
+        };
+      })
+    );
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    return [];
   }
 }

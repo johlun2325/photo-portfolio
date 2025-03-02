@@ -30,7 +30,7 @@ export interface CategoryImages {
   concert: CloudinaryImage[];
   landscape: CloudinaryImage[];
   street: CloudinaryImage[];
-  [key: string]: CloudinaryImage[]; // Tillåter dynamiska kategorier
+  [key: string]: CloudinaryImage[];
 }
 
 export interface HomeProps {
@@ -39,4 +39,38 @@ export interface HomeProps {
 
 export interface ImagePageProps {
   image: CloudinaryImageDetail | null;
+}
+
+/**
+ * En kategori i galleriet
+ */
+export interface Category {
+  id: string;
+  name: string;
+  coverImage: string;
+}
+
+/**
+ * Props för galleri-sidan
+ */
+export interface GalleryProps {
+  categories: Category[];
+  initialImages: Record<string, CloudinaryImage[]>;
+}
+
+/**
+ * Props för kategorilistan
+ */
+export interface CategoryListProps {
+  categories: Category[];
+  selectedCategory: string | null;
+  onCategoryClick: (categoryId: string) => void;
+}
+
+/**
+ * Props för bildgallerikomponenten
+ */
+export interface ImageGalleryProps {
+  categoryName: string;
+  images: CloudinaryImage[];
 }
