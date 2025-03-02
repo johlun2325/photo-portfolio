@@ -1,28 +1,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { v2 as cloudinary } from 'cloudinary';
-
-interface CloudinaryResource {
-  public_id: string;
-  secure_url: string;
-  width: number;
-  height: number;
-  format: string;
-}
-
-interface CloudinaryImage {
-  public_id: string;
-  secure_url: string;
-  width: number;
-  height: number;
-  format: string;
-  created_at: string;
-  tags: string[];
-}
-
-interface ImagePageProps {
-  image: CloudinaryImage | null;
-}
+import { CloudinaryResource } from '@/types';
+import { ImagePageProps } from '@/types';
+import { CloudinaryImageDetail } from '@/types';
 
 const getOptimizedImageUrl = (url: string, width: number) => {
   return url.replace('/upload/', `/upload/w_${width},c_scale,q_auto,f_auto/`);
@@ -117,7 +98,7 @@ export default function ImagePage({ image }: ImagePageProps) {
     );
   }
 
-  const formatImageTitle = (img: CloudinaryImage): string => {
+  const formatImageTitle = (img: CloudinaryImageDetail): string => {
     if (!img.tags?.length) return '';
     const titleTag = img.tags.find(tag => tag.startsWith('title:'));
     return titleTag ? titleTag.replace('title:', '') : '';

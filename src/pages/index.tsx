@@ -1,21 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { v2 as cloudinary } from 'cloudinary';
-
-interface CloudinaryImage {
-  public_id: string;
-  secure_url: string;
-}
-
-interface CategoryImages {
-  concert: CloudinaryImage[];
-  landscape: CloudinaryImage[];
-  street: CloudinaryImage[];
-}
-
-interface HomeProps {
-  initialImages: CategoryImages;
-}
+import { HomeProps } from '@/types';
+import { CloudinaryImage } from '@/types';
+import { CategoryImages } from '@/types';
 
 const getOptimizedImageUrl = (url: string, width: number) => {
   return url.replace('/upload/', `/upload/w_${width},c_scale,q_auto,f_auto/`);
